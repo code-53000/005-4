@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Train } from 'lucide-react';
 import { api } from '@/utils/api';
-import { TripRecord, TripRecordFormData, TripImage, TRAIN_TYPES, SEAT_TYPES, TrainType, SeatType } from '@shared/types';
+import { TripRecordFormData, TripImage, TRAIN_TYPES, SEAT_TYPES, TrainType, SeatType, ImageOrderItem } from '@shared/types';
 import ImageUploader from '@/components/ImageUploader';
 import Toast from '@/components/Toast';
 
@@ -29,6 +29,8 @@ export default function RecordForm() {
   const [existingImages, setExistingImages] = useState<TripImage[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
+  const [imageOrder, setImageOrder] = useState<ImageOrderItem[]>([]);
+  const [orderedNewFiles, setOrderedNewFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -114,7 +116,12 @@ export default function RecordForm() {
         formPayload.append('deletedImages', JSON.stringify(deletedImageIds));
       }
 
-      newFiles.forEach(file => {
+      if (isEdit && imageOrder.length > 0) {
+        formPayload.append('imageOrder', JSON.stringify(imageOrder));
+      }
+
+      const filesToUpload = orderedNewFiles.length > 0 ? orderedNewFiles : newFiles;
+      filesToUpload.forEach(file => {
         formPayload.append('images', file);
       });
 
@@ -149,10 +156,6 @@ export default function RecordForm() {
 
   const handleDeleteExistingImage = (imageId: number) => {
     setDeletedImageIds(prev => [...prev, imageId]);
-  };
-
-  const handleDeleteNewFile = (index: number) => {
-    setNewFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   if (isLoading) {
@@ -342,7 +345,8 @@ export default function RecordForm() {
               deletedImageIds={deletedImageIds}
               onNewFilesChange={setNewFiles}
               onDeleteExisting={handleDeleteExistingImage}
-              onDeleteNewFile={handleDeleteNewFile}
+              onOrderChange={setImageOrder}
+              onNewFilesReordered={setOrderedNewFiles}
             />
           </div>
 

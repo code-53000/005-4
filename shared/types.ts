@@ -11,6 +11,11 @@ export interface TripImage {
   url?: string;
 }
 
+export interface ImageOrderItem {
+  id?: number;
+  tempId?: string;
+}
+
 export interface TripRecord {
   id: number;
   trainNumber: string;

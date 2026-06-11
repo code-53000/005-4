@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 import db from '../db';
-import { TripRecord, TripRecordFormData } from '../../../shared/types';
+import { TripRecord, TripRecordFormData, ImageOrderItem } from '../../../shared/types';
 
 const router = Router();
 
@@ -163,7 +163,7 @@ router.post('/', authenticateToken, upload.array('images', 20), (req: AuthReques
 
 router.put('/:id', authenticateToken, upload.array('images', 20), (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const body = req.body as TripRecordFormData & { deletedImages?: string };
+  const body = req.body as TripRecordFormData & { deletedImages?: string; imageOrder?: string };
 
   const existing = db.prepare('SELECT id FROM trip_records WHERE id = ?').get(id);
   if (!existing) {
@@ -212,12 +212,29 @@ router.put('/:id', authenticateToken, upload.array('images', 20), (req: AuthRequ
   }
 
   const files = req.files as Express.Multer.File[] | undefined;
-  if (files && files.length > 0) {
+  const fileList = files || [];
+
+  if (body.imageOrder) {
+    const order = JSON.parse(body.imageOrder) as ImageOrderItem[];
+    const updateSortOrder = db.prepare('UPDATE trip_images SET sort_order = ? WHERE id = ? AND record_id = ?');
+    const insertImage = db.prepare('INSERT INTO trip_images (record_id, filename, original_name, sort_order) VALUES (?, ?, ?, ?)');
+    let fileIndex = 0;
+
+    order.forEach((item, sortOrder) => {
+      if (item.id !== undefined) {
+        updateSortOrder.run(sortOrder, item.id, Number(id));
+      } else if (item.tempId !== undefined && fileIndex < fileList.length) {
+        const file = fileList[fileIndex];
+        insertImage.run(Number(id), file.filename, file.originalname, sortOrder);
+        fileIndex++;
+      }
+    });
+  } else if (fileList.length > 0) {
     const maxOrderRow = db.prepare('SELECT COALESCE(MAX(sort_order), -1) as max_order FROM trip_images WHERE record_id = ?').get(id) as { max_order: number };
     let sortOrder = maxOrderRow.max_order + 1;
     
     const insertImage = db.prepare('INSERT INTO trip_images (record_id, filename, original_name, sort_order) VALUES (?, ?, ?, ?)');
-    files.forEach((file) => {
+    fileList.forEach((file) => {
       insertImage.run(Number(id), file.filename, file.originalname, sortOrder++);
     });
   }
