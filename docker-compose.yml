@@ -1,0 +1,19 @@
+services:
+  train-journal:
+    build: .
+    container_name: train-journal
+    restart: unless-stopped
+    ports:
+      - "3000:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET:-trainfan-secret-key-2024}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - APP_USERNAME=${APP_USERNAME:-trainfan}
+      - APP_PASSWORD=${APP_PASSWORD:-train123456}
+      - DB_PATH=/app/data/train_records.db
+      - UPLOAD_DIR=/app/api/uploads
+    volumes:
+      - ./data:/app/data
+      - ./api/uploads:/app/api/uploads

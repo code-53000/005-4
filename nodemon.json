@@ -1,0 +1,10 @@
+{
+  "watch": ["api", "shared"],
+  "ext": "ts,mts,js,json",
+  "ignore": ["api/dist/*", "api/uploads/*"],
+  "exec": "tsx api/src/index.ts",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": 1000
+}

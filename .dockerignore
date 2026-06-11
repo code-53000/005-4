@@ -1,0 +1,10 @@
+node_modules
+dist
+data
+api/uploads
+.git
+.gitignore
+*.md
+.trae
+npm-debug.log
+.env.local
